@@ -1,6 +1,9 @@
 import numpy as np
 from icecream import ic
 import matplotlib.pyplot as plt
+from scipy.stats import pearsonr
+import seaborn as sns
+import statsmodels.api as sm
 
 # Q2:
 x = np.array([1.3, 0.7, 0.0, -0.7, -1.3,-1.6, -2.0, -1.6, -1.3,-0.7, 0.0, 0.7, 1.3, 1.6, 2.0, 1.6])
@@ -167,28 +170,95 @@ plt.savefig('pca_data.png')
 # sum_squared_errors_x = np.sum((x - x_mean)**2)
 # ic(sum_squared_errors_x)
 
+# Calculate R-squared
+ss_total = np.sum((y - mean_y) ** 2)
+ss_residual = np.sum((y - y_standardized) ** 2)
+r_squared = 1 - (ss_residual / ss_total)
+ic(ss_total)
+ic(ss_residual)
+ic(r_squared)
+print(f"R-squared: {r_squared:.4f}")
 
+# Create the plot
+plt.figure(figsize=(10, 6))
+plt.scatter(x, y)
+plt.plot(x, y_standardized, color='red', label='Regression line')
+plt.xlabel('X values')
+plt.ylabel('Y values')
+plt.title('Linear Regression Model')
+plt.legend()
+plt.grid(True)
+plt.savefig('linear_regression.png')
+plt.close()
 
+# Create datasets dictionary with explicit numeric arrays
+datasets = {
+    'Original Data': {
+        'x': np.array(x, dtype=float),
+        'y': np.array(y, dtype=float)
+    },
+    'Standardized Data': {
+        'x': x_standardized,
+        'y': y_standardized
+    },
+    'Q3 Data': {
+        'x': np.array([27.5, 20.8, 33.2, 18.3, 29.9, 24.1], dtype=float),
+        'y': np.array([12.5, 9.6, 14.7, 8.4, 13.9, 11.1], dtype=float)
+    }
+}
 
-# # Calculate R-squared
-# ss_total = np.sum((y - y_mean) ** 2)
-# ss_residual = np.sum((y - y_pred) ** 2)
-# r_squared = 1 - (ss_residual / ss_total)
-# ic(ss_total)
-# ic(ss_residual)
-# ic(r_squared)
-# print(f"R-squared: {r_squared:.4f}")
+# Set up the plot with GridSpec for better control
+fig = plt.figure(figsize=(15, 12))
+gs = fig.add_gridspec(2, 2, height_ratios=[1, 1])
 
-# # Create the plot
-# plt.figure(figsize=(10, 6))
-# plt.scatter(x, y, color='blue', label='Data points')
-# plt.plot(x, y_pred, color='red', label='Regression line')
-# plt.xlabel('X values')
-# plt.ylabel('Y values')
-# plt.title('Linear Regression Model')
-# plt.legend()
-# plt.grid(True)
-# plt.savefig('linear_regression.png')
-# plt.close()
+# Create the first two plots in the top row
+ax1 = fig.add_subplot(gs[0, 0])
+ax2 = fig.add_subplot(gs[0, 1])
+# Create the third plot centered in the bottom row, spanning both columns
+ax3 = fig.add_subplot(gs[1, :])
+
+axes = [ax1, ax2, ax3]
+
+colours = ["#1f77b4", "#9467bd", "#e377c2"]
+
+# Create scatter plots with correlation and p-values
+for i, (name, data) in enumerate(datasets.items()):
+    # Add constant for statsmodels
+    X = sm.add_constant(data['x'])
+    
+    # Fit the model using statsmodels
+    model = sm.OLS(data['y'], X).fit()
+    
+    # Get p-values
+    p_values = model.pvalues[1]
+    
+    # Calculate Pearson correlation
+    r_val, _ = pearsonr(data['x'], data['y'])
+    
+    p_formatted = format_p(p_values)
+    
+    # Create regression plot with gray points
+    sns.regplot(x=data['x'], 
+                y=data['y'], 
+                color=colours[i], 
+                ax=axes[i],
+                scatter_kws={"color": "#808080", "alpha": 0.5},  # Light gray points
+                line_kws={"color": colours[i]})
+    
+    # Set titles and labels
+    axes[i].set_title(f"{name}\n$r$ = {r_val:.2f}, $p$ {p_formatted}", fontsize=11)
+    axes[i].set_xlabel('X values')
+    axes[i].set_ylabel('Y values')
+    axes[i].grid(True, alpha=0.3)
+
+# Adjust the position of the bottom plot to be centered but same size as others
+axes[2].set_position([0.25, 0.1, 0.5, 0.35])
+
+# Adjust layout
+plt.suptitle("Regression Analysis of All Datasets", y=0.95, fontsize=14)
+
+# Save the plot
+plt.savefig('regression_analysis_all.png', bbox_inches='tight')
+plt.close()
 
 

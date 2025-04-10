@@ -58,6 +58,7 @@ ic(f"Intercept: {model_poly3.intercept_:.3f}")
 
 
 residuals = x - model.predict(x)
+
 ic(residuals)
 
 # plot residuals
